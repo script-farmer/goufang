@@ -1,0 +1,899 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>购房费用测算</title>
+<style>
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0; padding: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+    background: #eef1f4;
+    color: #1f2933;
+    font-size: 15px;
+    line-height: 1.5;
+    padding-bottom: 40px;
+  }
+  .wrap { max-width: 520px; margin: 0 auto; padding: 0 12px; }
+
+  header {
+    background: #1a4d5c;
+    color: #fff;
+    padding: 18px 12px 16px;
+    margin-bottom: 14px;
+  }
+  header h1 { margin: 0; font-size: 18px; font-weight: 600; letter-spacing: 1px; }
+  header p { margin: 4px 0 0; font-size: 12px; opacity: .7; }
+
+  .card {
+    background: #fff;
+    border-radius: 10px;
+    padding: 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.06);
+  }
+  .card-title {
+    font-size: 13px; font-weight: 600; color: #7b8794;
+    margin: 0 0 14px; padding-bottom: 8px;
+    border-bottom: 1px solid #eceff1;
+    letter-spacing: .5px;
+  }
+
+  .row { display: flex; align-items: center; margin-bottom: 12px; }
+  .row:last-child { margin-bottom: 0; }
+  .row label {
+    flex: 0 0 88px;
+    font-size: 14px; color: #52606d;
+  }
+  .row .ctrl { flex: 1; display: flex; align-items: center; gap: 8px; }
+
+  input[type="number"], input[type="text"], select {
+    width: 100%;
+    height: 42px;
+    padding: 0 12px;
+    font-size: 16px;
+    border: 1px solid #d9e2ec;
+    border-radius: 8px;
+    background: #fbfcfd;
+    color: #1f2933;
+    outline: none;
+    transition: border-color .15s;
+  }
+  input:focus, select:focus { border-color: #1a4d5c; background: #fff; }
+  input:disabled { background: #f0f3f5; color: #9aa5b1; }
+
+  .suffix { font-size: 13px; color: #9aa5b1; flex: 0 0 auto; }
+
+  .unit-group { display: flex; gap: 6px; width: 100%; }
+  .unit-group input { flex: 1; min-width: 0; }
+
+  .hint { font-size: 12px; color: #9aa5b1; margin: 6px 0 0 88px; }
+
+  /* 结果区 */
+  .result-main {
+    background: linear-gradient(135deg, #1a4d5c 0%, #24626f 100%);
+    color: #fff;
+    border-radius: 10px;
+    padding: 18px 16px;
+    margin-bottom: 12px;
+    box-shadow: 0 2px 8px rgba(26,77,92,.25);
+  }
+  .result-main .label { font-size: 12px; opacity: .75; margin-bottom: 2px; }
+  .result-main .big { font-size: 30px; font-weight: 700; letter-spacing: -.5px; }
+  .result-main .big small { font-size: 14px; font-weight: 400; opacity: .8; margin-left: 4px; }
+  .result-main .sub { font-size: 12px; opacity: .75; margin-top: 6px; }
+  .result-main .divider { height: 1px; background: rgba(255,255,255,.18); margin: 14px 0; }
+  .result-row { display: flex; justify-content: space-between; font-size: 13px; padding: 4px 0; }
+  .result-row span:first-child { opacity: .75; }
+  .result-row span:last-child { font-weight: 600; }
+
+  .line {
+    display: flex; justify-content: space-between; align-items: baseline;
+    padding: 9px 0; border-bottom: 1px dashed #eceff1; font-size: 14px;
+  }
+  .line:last-child { border-bottom: none; }
+  .line .k { color: #616e7c; }
+  .line .v { font-weight: 600; font-variant-numeric: tabular-nums; }
+  .line .v.accent { color: #c0392b; }
+  .line .v.green { color: #1e7e34; }
+  .line.total { border-top: 2px solid #1a4d5c; border-bottom: none; margin-top: 6px; padding-top: 12px; }
+  .line.total .k { font-weight: 600; color: #1f2933; }
+  .line.total .v { font-size: 18px; color: #1a4d5c; }
+
+  .warn {
+    background: #fff8e6;
+    border-left: 3px solid #e6a700;
+    padding: 10px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    color: #7a5c00;
+    line-height: 1.6;
+    margin-top: 10px;
+  }
+  .warn b { color: #5c4500; }
+
+  .actions { display: flex; gap: 10px; margin-top: 4px; }
+  button {
+    flex: 1; height: 46px;
+    border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 600;
+    cursor: pointer;
+    transition: opacity .15s;
+  }
+  button:active { opacity: .75; }
+  .btn-primary { background: #1a4d5c; color: #fff; }
+  .btn-ghost { background: #fff; color: #616e7c; border: 1px solid #d9e2ec; }
+
+  .seg { display: flex; background: #eef1f4; border-radius: 8px; padding: 3px; width: 100%; }
+  .seg button {
+    flex: 1; height: 36px; border-radius: 6px; background: transparent;
+    color: #616e7c; font-size: 14px; font-weight: 500;
+  }
+  .seg button.active { background: #fff; color: #1a4d5c; font-weight: 600; box-shadow: 0 1px 2px rgba(0,0,0,.08); }
+
+  .footnote { text-align: center; font-size: 11px; color: #9aa5b1; margin-top: 18px; line-height: 1.8; }
+
+  /* 分享图片预览 */
+  #shareMask {
+    display: none;
+    position: fixed; inset: 0; z-index: 99;
+    background: rgba(12, 24, 28, .9);
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+  .share-inner { padding: 16px 12px 30px; max-width: 560px; margin: 0 auto; }
+  #shareImg {
+    display: block; width: 100%; height: auto;
+    border-radius: 8px;
+    box-shadow: 0 10px 34px rgba(0, 0, 0, .45);
+  }
+  .share-tip {
+    margin-top: 14px; text-align: center;
+    font-size: 12px; color: rgba(255, 255, 255, .55);
+  }
+  .share-btns { display: flex; gap: 10px; margin-top: 14px; }
+  .share-btns button {
+    flex: 1; height: 46px; border: none; border-radius: 8px;
+    font-size: 15px; font-weight: 600; cursor: pointer;
+    background: #fff; color: #616e7c;
+  }
+  .share-btns button.primary { background: #1a4d5c; color: #fff; }
+  .share-btns button:active { opacity: .8; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap" style="padding:0;">
+    <h1>购房费用测算</h1>
+    <p>首付 · 月供 · 税费 · 补贴</p>
+  </div>
+</header>
+
+<div class="wrap">
+
+  <!-- 房屋信息 -->
+  <div class="card">
+    <div class="card-title">房屋信息</div>
+
+    <div class="row">
+      <label>房号</label>
+      <div class="ctrl">
+        <div class="unit-group">
+          <input type="text" id="building" placeholder="栋" inputmode="numeric">
+          <input type="text" id="unit" placeholder="单元(可空)" inputmode="numeric">
+          <input type="text" id="room" placeholder="室" inputmode="numeric">
+        </div>
+      </div>
+    </div>
+    <div class="hint">例：21 栋 2 单元 201 室；无单元号则中间留空</div>
+
+    <div class="row" style="margin-top:12px;">
+      <label>建筑面积</label>
+      <div class="ctrl">
+        <input type="number" id="area" placeholder="0.00" step="0.01" inputmode="decimal">
+        <span class="suffix">㎡</span>
+      </div>
+    </div>
+
+    <div class="row">
+      <label>单价</label>
+      <div class="ctrl">
+        <input type="number" id="price" placeholder="0" step="1" inputmode="decimal">
+        <span class="suffix">元/㎡</span>
+      </div>
+    </div>
+
+    <div class="row">
+      <label>总房款</label>
+      <div class="ctrl">
+        <input type="text" id="total" disabled>
+        <span class="suffix">元</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 首付 -->
+  <div class="card">
+    <div class="card-title">首付与贷款</div>
+
+    <div class="row">
+      <label>最低首付比例</label>
+      <div class="ctrl">
+        <input type="number" id="downRatio" value="15" step="1" min="0" max="100" inputmode="decimal">
+        <span class="suffix">%</span>
+      </div>
+    </div>
+
+    <div class="row">
+      <label>首付金额</label>
+      <div class="ctrl">
+        <input type="number" id="downPayment" placeholder="0" step="1" inputmode="decimal">
+        <span class="suffix">元</span>
+      </div>
+    </div>
+    <div class="hint" id="downHint">最低首付 — 元</div>
+
+    <div class="row" style="margin-top:12px;">
+      <label>贷款金额</label>
+      <div class="ctrl">
+        <input type="text" id="loan" disabled>
+        <span class="suffix">元</span>
+      </div>
+    </div>
+    <div class="hint">贷款金额按万元向下取整</div>
+  </div>
+
+  <!-- 贷款条件 -->
+  <div class="card">
+    <div class="card-title">贷款条件</div>
+
+    <div class="row">
+      <label>贷款年限</label>
+      <div class="ctrl">
+        <select id="years"></select>
+      </div>
+    </div>
+
+    <div class="row">
+      <label>利率标准</label>
+      <div class="ctrl">
+        <select id="rateType">
+          <option value="lpr">LPR（5年期以上 3.50%）</option>
+          <option value="base">基准利率（5年以上 4.90%）</option>
+        </select>
+      </div>
+    </div>
+  </div>
+
+  <!-- 税费 -->
+  <div class="card">
+    <div class="card-title">税费</div>
+
+    <div class="row">
+      <label>现有住房</label>
+      <div class="ctrl">
+        <select id="houses">
+          <option value="0">无住房</option>
+          <option value="1">1 套</option>
+          <option value="2">2 套及以上</option>
+        </select>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- 结果 -->
+  <div class="result-main">
+    <div class="label">等额本息 · 每月固定</div>
+    <div class="big" id="mEqual">— <small>元/月</small></div>
+    <div class="divider"></div>
+    <div class="label">等额本金 · 逐月递减</div>
+    <div class="big" id="mPrincipal">— <small>元/月</small></div>
+    <div class="sub" id="mPrincipalSub">首月 —　末月 —</div>
+    <div class="divider"></div>
+    <div class="result-row"><span>贷款金额</span><span id="rLoan">—</span></div>
+    <div class="result-row"><span>贷款年限</span><span id="rYears">—</span></div>
+    <div class="result-row"><span>年利率</span><span id="rRate">—</span></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">费用明细</div>
+
+    <div class="line"><span class="k">房号</span><span class="v" id="rRoom">—</span></div>
+    <div class="line"><span class="k">建筑面积</span><span class="v" id="rArea">—</span></div>
+    <div class="line"><span class="k">单价</span><span class="v" id="rPrice">—</span></div>
+    <div class="line"><span class="k">房屋总价</span><span class="v" id="rTotal">—</span></div>
+    <div class="line"><span class="k">首付金额</span><span class="v" id="rDown">—</span></div>
+    <div class="line"><span class="k">首付比例</span><span class="v" id="rDownRatio">—</span></div>
+    <div class="line"><span class="k">贷款金额</span><span class="v" id="rLoan2">—</span></div>
+    <div class="line"><span class="k">月供（等额本息）</span><span class="v" id="rMEqual">—</span></div>
+    <div class="line"><span class="k">月供（等额本金·首月）</span><span class="v" id="rMPrincipal">—</span></div>
+    <div class="line"><span class="k">契税</span><span class="v" id="rTax">—</span></div>
+    <div class="line"><span class="k">维修基金</span><span class="v" id="rFund">—</span></div>
+    <div class="line"><span class="k">购房补贴</span><span class="v green" id="rSubsidy">—</span></div>
+    <div class="line total"><span class="k">除贷款外需备现金</span><span class="v" id="rCash">—</span></div>
+
+    <div class="warn">
+      <b>购房补贴以实际申领审核为准。</b>需年满 18 周岁、为购房合同备案的买受人，在政策有效期内完成网签备案并缴纳契税，经「一部手机游云南」小程序审核通过后打款至本人银行卡。
+    </div>
+  </div>
+
+  <div class="actions">
+    <button class="btn-ghost" id="btnReset">重置</button>
+    <button class="btn-ghost" id="btnCopy">复制结果</button>
+    <button class="btn-primary" id="btnShare">生成图片</button>
+  </div>
+
+  <div class="footnote">
+    契税按不含增值税成交价计算 · 贷款金额按万元向下取整<br>
+    结果仅供参考，以银行审批及主管部门核定为准
+  </div>
+
+</div>
+
+<!-- 分享图片预览层 -->
+<div id="shareMask">
+  <div class="share-inner">
+    <img id="shareImg" alt="购房费用测算">
+    <div class="share-tip">长按图片可保存到相册</div>
+    <div class="share-btns">
+      <button id="btnCloseShare">关闭</button>
+      <button id="btnSaveShare" class="primary">保存图片</button>
+    </div>
+  </div>
+</div>
+
+<script>
+(function () {
+  'use strict';
+
+  // ===== 常量配置（政策变动只改这里）=====
+  var CONFIG = {
+    PROJECT_NAME: '御宸苑',  // 分享图片顶部显示的项目名，换盘只改这里
+    LPR: 0.0350,           // 5年期以上LPR，2026-10-20 报价
+    BASE_RATE: 0.0490,     // 央行基准利率 5年以上
+    VAT_RATE: 0.09,        // 增值税率，用于换算不含税价
+    // 维修基金：丽江市区按建安造价5%交存（丽江市住宅专项维修资金管理办法，2018-01-01施行）
+    // 本项目为框架结构带电梯住宅：93 元/㎡
+    // 如出现不带电梯楼栋改 88；砖混 73/78；钢结构 98/103
+    FUND_RATE: 93,         // 元/㎡
+    SUBSIDY: [             // 购房补贴档位（按房屋总价）
+      { max: 800000,    amount: 5000  },
+      { max: 1600000,   amount: 10000 },
+      { max: Infinity,  amount: 15000 }
+    ]
+  };
+
+  // ===== 元素 =====
+  var $ = function (id) { return document.getElementById(id); };
+  var el = {
+    building: $('building'), unit: $('unit'), room: $('room'),
+    area: $('area'), price: $('price'), total: $('total'),
+    downRatio: $('downRatio'), downPayment: $('downPayment'),
+    downHint: $('downHint'), loan: $('loan'),
+    years: $('years'), rateType: $('rateType'),
+    houses: $('houses'),
+    mEqual: $('mEqual'), mPrincipal: $('mPrincipal'), mPrincipalSub: $('mPrincipalSub'),
+    rLoan: $('rLoan'), rYears: $('rYears'), rRate: $('rRate'),
+    rRoom: $('rRoom'), rArea: $('rArea'), rPrice: $('rPrice'), rTotal: $('rTotal'),
+    rDown: $('rDown'), rDownRatio: $('rDownRatio'), rLoan2: $('rLoan2'),
+    rMEqual: $('rMEqual'), rMPrincipal: $('rMPrincipal'),
+    rTax: $('rTax'), rFund: $('rFund'), rSubsidy: $('rSubsidy'), rCash: $('rCash')
+  };
+
+  // ===== 工具 =====
+  var lastResult = null;   // 最近一次计算的完整结果，供分享图片使用
+
+  function num(v) { var n = parseFloat(v); return isFinite(n) ? n : 0; }
+
+  // 千分位，保留2位小数（整数则不带小数）
+  function fmt(n) {
+    if (!isFinite(n)) return '—';
+    var fixed = Math.abs(n % 1) < 0.005 ? n.toFixed(0) : n.toFixed(2);
+    var parts = fixed.split('.');
+    parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
+    return parts.join('.');
+  }
+
+  // 向下取整到万元
+  function floorToWan(n) {
+    if (n <= 0) return 0;
+    return Math.floor(n / 10000) * 10000;
+  }
+
+  // ===== 初始化年限下拉 =====
+  (function initYears() {
+    var html = '';
+    for (var y = 1; y <= 40; y++) {
+      html += '<option value="' + y + '"' + (y === 30 ? ' selected' : '') + '>' + y + ' 年</option>';
+    }
+    el.years.innerHTML = html;
+  })();
+
+  // ===== 主计算 =====
+  // commitDown = true 时，把取整后调整的首付写回输入框
+  function recalc(commitDown) {
+    var area = num(el.area.value);
+    var price = num(el.price.value);
+    var total = area * price;
+
+    el.total.value = total > 0 ? fmt(total) : '';
+
+    if (total <= 0) {
+      clearResults();
+      return;
+    }
+
+    // --- 首付与贷款 ---
+    var ratioPct = num(el.downRatio.value);
+    if (ratioPct < 0) ratioPct = 0;
+    if (ratioPct > 100) ratioPct = 100;
+    var ratio = ratioPct / 100;
+
+    // 理论贷款 -> 按万元向下取整 -> 最低首付
+    var loanTheory = total * (1 - ratio);
+    var loanMin = floorToWan(loanTheory);
+    var minDown = total - loanMin;
+
+    el.downHint.textContent = '最低首付 ' + fmt(minDown) + ' 元';
+
+    // 实际首付：不低于最低首付，不高于总房款
+    var downInput = el.downPayment.value.trim();
+    var actualDown = downInput === '' ? minDown : num(downInput);
+    if (actualDown < minDown) actualDown = minDown;
+    if (actualDown > total) actualDown = total;
+
+    // 实际贷款再按万元取整，首付补回取整差额
+    var actualLoan = floorToWan(total - actualDown);
+    actualDown = total - actualLoan;
+
+    // 失焦时把调整后的首付写回输入框，保证输入框与结果一致
+    // 输入框留空表示"按比例走"，此时不写回
+    if (commitDown && downInput !== '') {
+      el.downPayment.value = Number(actualDown.toFixed(2));
+    }
+
+    el.loan.value = fmt(actualLoan);
+
+    var actualRatio = total > 0 ? (actualDown / total * 100) : 0;
+
+    // --- 月供 ---
+    var years = parseInt(el.years.value, 10) || 30;
+    var months = years * 12;
+    var annualRate = el.rateType.value === 'lpr' ? CONFIG.LPR : CONFIG.BASE_RATE;
+    var i = annualRate / 12;
+
+    var mEqual = 0, mPrincipalFirst = 0, mPrincipalLast = 0, decPerMonth = 0;
+    if (actualLoan > 0 && i > 0) {
+      // 等额本息
+      var pow = Math.pow(1 + i, months);
+      mEqual = actualLoan * i * pow / (pow - 1);
+      // 等额本金
+      var principalPart = actualLoan / months;
+      mPrincipalFirst = principalPart + actualLoan * i;
+      mPrincipalLast = principalPart + principalPart * i;
+      decPerMonth = principalPart * i;   // 每月递减额
+    }
+
+    // --- 契税 ---
+    // 计税依据：不含增值税成交价
+    var taxBase = total / (1 + CONFIG.VAT_RATE);
+    // 按「客户名下现有住房套数」判定本次购房属于首套/二套/三套及以上
+    var houseCount = el.houses.value; // 0 / 1 / 2
+    var isSmall = area <= 140;
+    var taxRate;
+    if (houseCount === '0') {          // 名下无住房 -> 本次首套
+      taxRate = isSmall ? 0.010 : 0.015;
+    } else if (houseCount === '1') {   // 名下 1 套 -> 本次二套
+      taxRate = isSmall ? 0.010 : 0.020;
+    } else {                            // 名下 2 套及以上 -> 三套及以上
+      taxRate = 0.030;
+    }
+    var deedTax = taxBase * taxRate;
+
+    // --- 维修基金 ---
+    var fund = area * CONFIG.FUND_RATE;
+
+    // --- 购房补贴 ---
+    var subsidy = 0;
+    for (var s = 0; s < CONFIG.SUBSIDY.length; s++) {
+      if (total < CONFIG.SUBSIDY[s].max) { subsidy = CONFIG.SUBSIDY[s].amount; break; }
+    }
+
+    // --- 除贷款外需备现金 ---
+    var cashNeeded = actualDown + deedTax + fund;
+
+    // --- 渲染 ---
+    el.mEqual.innerHTML = (actualLoan > 0 ? fmt(mEqual) : '—') + ' <small>元/月</small>';
+    el.mPrincipal.innerHTML = (actualLoan > 0 ? fmt(mPrincipalFirst) : '—') + ' <small>元/月</small>';
+    el.mPrincipalSub.textContent = actualLoan > 0
+      ? '每月递减 ' + fmt(decPerMonth) + ' 元，末月 ' + fmt(mPrincipalLast) + ' 元'
+      : '首月 —　末月 —';
+    el.rLoan.textContent = actualLoan > 0 ? '¥' + fmt(actualLoan) : '全款';
+    el.rYears.textContent = actualLoan > 0 ? years + ' 年' : '—';
+    el.rRate.textContent = actualLoan > 0 ? (annualRate * 100).toFixed(2) + '%' : '—';
+
+    el.rRoom.textContent = buildRoom();
+    el.rArea.textContent = area.toFixed(2) + ' ㎡';
+    el.rPrice.textContent = fmt(price) + ' 元/㎡';
+    el.rTotal.textContent = '¥' + fmt(total);
+    el.rDown.textContent = '¥' + fmt(actualDown);
+    el.rDownRatio.textContent = actualRatio.toFixed(2) + '%';
+    el.rLoan2.textContent = actualLoan > 0 ? '¥' + fmt(actualLoan) : '¥0（全款）';
+    el.rMEqual.textContent = actualLoan > 0 ? '¥' + fmt(mEqual) + ' /月' : '—';
+    el.rMPrincipal.textContent = actualLoan > 0
+      ? '¥' + fmt(mPrincipalFirst) + ' /月（末月 ¥' + fmt(mPrincipalLast) + '）'
+      : '—';
+    var houseName = houseCount === '0' ? '首套' : (houseCount === '1' ? '二套' : '三套及以上');
+    el.rTax.textContent = '¥' + fmt(deedTax) + '（' + houseName + ' ' +
+      area.toFixed(0) + '㎡ → ' + (taxRate * 100).toFixed(1) + '%）';
+    el.rFund.textContent = '¥' + fmt(fund);
+    el.rSubsidy.textContent = '¥' + fmt(subsidy) + '（最高）';
+    el.rCash.textContent = '¥' + fmt(cashNeeded);
+
+    // 存一份给分享图片用
+    lastResult = {
+      projectName: CONFIG.PROJECT_NAME,
+      room: buildRoom(),
+      area: area, price: price, total: total,
+      downRatio: actualRatio, down: actualDown, loan: actualLoan,
+      years: years, annualRate: annualRate,
+      rateLabel: el.rateType.value === 'lpr' ? 'LPR' : '基准利率',
+      mEqual: mEqual, mPFirst: mPrincipalFirst, mPLast: mPrincipalLast, dec: decPerMonth,
+      tax: deedTax, taxRate: taxRate, houseName: houseName,
+      fund: fund, subsidy: subsidy, cash: cashNeeded
+    };
+  }
+
+  function buildRoom() {
+    var b = el.building.value.trim();
+    var u = el.unit.value.trim();
+    var r = el.room.value.trim();
+    if (!b && !u && !r) return '—';
+    var out = '';
+    if (b) out += b + '栋';
+    if (u) out += u + '单元';
+    if (r) out += r + '室';
+    return out;
+  }
+
+  function clearResults() {
+    lastResult = null;
+    el.loan.value = '';
+    el.downHint.textContent = '最低首付 — 元';
+    el.mEqual.innerHTML = '— <small>元/月</small>';
+    el.mPrincipal.innerHTML = '— <small>元/月</small>';
+    el.mPrincipalSub.textContent = '首月 —　末月 —';
+    ['rLoan','rYears','rRate','rRoom','rArea','rPrice','rTotal','rDown','rDownRatio',
+     'rLoan2','rMEqual','rMPrincipal','rTax','rFund','rSubsidy','rCash'].forEach(function (k) {
+      el[k].textContent = '—';
+    });
+  }
+
+  // ===== 分享图片 =====
+  var shareFileName = '购房测算.png';
+
+  function roundRect(c, x, y, w, h, r) {
+    c.beginPath();
+    c.moveTo(x + r, y);
+    c.lineTo(x + w - r, y);
+    c.arcTo(x + w, y, x + w, y + r, r);
+    c.lineTo(x + w, y + h - r);
+    c.arcTo(x + w, y + h, x + w - r, y + h, r);
+    c.lineTo(x + r, y + h);
+    c.arcTo(x, y + h, x, y + h - r, r);
+    c.lineTo(x, y + r);
+    c.arcTo(x, y, x + r, y, r);
+    c.closePath();
+  }
+
+  // 绘制 1080px 宽的分享卡片（逻辑坐标 540，2 倍缩放）
+  function drawShareCard(d) {
+    var W = 540, PAD = 32, CW = W - PAD * 2, SCALE = 2, HMAX = 2600;
+    var cv = document.createElement('canvas');
+    cv.width = W * SCALE;
+    cv.height = HMAX * SCALE;
+    var c = cv.getContext('2d');
+    c.scale(SCALE, SCALE);
+    c.textBaseline = 'middle';
+
+    var FONT = '"PingFang SC","Microsoft YaHei","Hiragino Sans GB","Heiti SC",sans-serif';
+    function font(size, weight) { c.font = (weight || 400) + ' ' + size + 'px ' + FONT; }
+    function text(str, x, y, size, weight, color, align) {
+      font(size, weight);
+      c.fillStyle = color;
+      c.textAlign = align || 'left';
+      c.fillText(str, x, y);
+      c.textAlign = 'left';
+    }
+    function textW(str, size, weight) {
+      font(size, weight);
+      return c.measureText(str).width;
+    }
+
+    // 配色：暖中性、平实，不用深色大面积和高饱和
+    var C = {
+      bg:      '#FBFAF7',
+      head:    '#EFECE5',
+      ink:     '#2E2A24',
+      inkSoft: '#4C463C',
+      sub:     '#8C8578',
+      line:    '#E3DED4',
+      block:   '#F3F0E9',
+      green:   '#5A7247'
+    };
+
+    // 底色
+    c.fillStyle = C.bg;
+    c.fillRect(0, 0, W, HMAX);
+
+    // ---- 头部 ----
+    var HEAD = 148;
+    c.fillStyle = C.head;
+    c.fillRect(0, 0, W, HEAD);
+    c.fillStyle = C.line;
+    c.fillRect(0, HEAD - 1, W, 1);
+
+    text(d.projectName, PAD, 44, 24, 700, C.ink);
+    text('购房费用测算', W - PAD, 44, 12, 400, C.sub, 'right');
+    text(d.room || '房源测算', PAD, 88, 21, 600, C.inkSoft);
+    text(d.area.toFixed(2) + ' ㎡  ·  ' + fmt(d.price) + ' 元/㎡',
+         PAD, 122, 13, 400, C.sub);
+
+    var y = HEAD + 28;
+
+    // ---- 总价 ----
+    text('房屋总价', PAD, y, 13, 400, C.sub);
+    y += 30;
+    text('¥' + fmt(d.total), PAD, y, 38, 700, C.ink);
+    y += 26;
+
+    // 首付 / 贷款（同底色、同字号，权重一致）
+    var bw = (CW - 12) / 2, bh = 76;
+    c.fillStyle = C.block;
+    roundRect(c, PAD, y, bw, bh, 8); c.fill();
+    text('首付 ' + d.downRatio.toFixed(2) + '%', PAD + 16, y + 25, 12, 400, C.sub);
+    text('¥' + fmt(d.down), PAD + 16, y + 53, 20, 700, C.ink);
+
+    c.fillStyle = C.block;
+    roundRect(c, PAD + bw + 12, y, bw, bh, 8); c.fill();
+    text(d.loan > 0 ? '贷款 ' + d.years + ' 年' : '付款方式',
+         PAD + bw + 28, y + 25, 12, 400, C.sub);
+    text(d.loan > 0 ? '¥' + fmt(d.loan) : '全款',
+         PAD + bw + 28, y + 53, 20, 700, C.ink);
+
+    y += bh + 34;
+
+    // ---- 月供（两种方式完全对等，不做主次区分）----
+    if (d.loan > 0) {
+      text('月供 · 按 ' + d.rateLabel + ' ' + (d.annualRate * 100).toFixed(2) + '% 测算',
+           PAD, y, 13, 600, C.inkSoft);
+      y += 22;
+
+      var mw = (CW - 12) / 2, mh = 112;
+      function mbox(x, title, sub, big, foot) {
+        c.fillStyle = C.block;
+        roundRect(c, x, y, mw, mh, 8); c.fill();
+        text(title, x + 18, y + 27, 13, 600, C.inkSoft);
+        text(sub, x + 18, y + 47, 11, 400, C.sub);
+        text(big, x + 18, y + 78, 23, 700, C.ink);
+        text(foot, x + 18, y + 99, 11, 400, C.sub);
+      }
+      mbox(PAD, '等额本息', '每月固定', '¥' + fmt(d.mEqual), '元/月');
+      mbox(PAD + mw + 12, '等额本金', '逐月递减', '¥' + fmt(d.mPFirst),
+           '首月 · 末月 ¥' + fmt(d.mPLast));
+
+      y += mh + 32;
+    } else {
+      y += 4;
+    }
+
+    // ---- 费用明细 ----
+    c.strokeStyle = C.line;
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(PAD, y - 12); c.lineTo(W - PAD, y - 12); c.stroke();
+
+    text('购房费用明细', PAD, y + 12, 13, 600, C.inkSoft);
+    y += 34;
+
+    // 契税：需交 → 扣减省补后
+    text('契税（' + d.houseName + ' ' + (d.taxRate * 100).toFixed(1) + '%）',
+         PAD, y + 18, 14, 400, C.inkSoft);
+    text('¥' + fmt(d.tax), W - PAD, y + 18, 14, 600, C.ink, 'right');
+    y += 38;
+
+    var afterSub = Math.max(0, d.tax - d.subsidy);
+    text('扣减省补 ¥' + fmt(d.subsidy) + ' 后', PAD + 12, y + 2, 12, 400, C.sub);
+    text('¥' + fmt(afterSub), W - PAD, y + 2, 15, 700, C.green, 'right');
+    y += 28;
+
+    c.strokeStyle = C.line;
+    c.lineWidth = 1;
+    c.beginPath();
+    c.moveTo(PAD, y); c.lineTo(W - PAD, y); c.stroke();
+    y += 4;
+
+    // 维修基金
+    text('维修基金', PAD, y + 18, 14, 400, C.inkSoft);
+    text('（交房时交）', PAD + textW('维修基金', 14, 400) + 4, y + 19, 11, 400, C.sub);
+    text('¥' + fmt(d.fund), W - PAD, y + 18, 14, 600, C.ink, 'right');
+    y += 38;
+
+    // 合计
+    c.strokeStyle = C.ink;
+    c.lineWidth = 1.5;
+    c.beginPath();
+    c.moveTo(PAD, y); c.lineTo(W - PAD, y); c.stroke();
+    y += 16;
+
+    // 合计按「已扣减省补」口径，保证和上面两行加得起来
+    var netCash = d.cash - d.subsidy;
+    text(d.loan > 0 ? '除贷款外需备现金' : '需备现金', PAD, y + 14, 15, 600, C.ink);
+    text('¥' + fmt(netCash), W - PAD, y + 14, 21, 700, C.ink, 'right');
+    y += 38;
+
+    if (d.subsidy > 0) {
+      text('已扣减省补 ¥' + fmt(d.subsidy) + '；契税需先按全额缴纳，补贴审核通过后返还',
+           PAD, y, 11, 400, C.sub);
+      y += 24;
+    }
+
+    // ---- 底注 ----
+    y += 6;
+    text('本测算仅供参考，以银行审批、实际签约及主管部门核定为准', W / 2, y, 12, 400, C.sub, 'center');
+    y += 22;
+    var now = new Date();
+    var dateStr = now.getFullYear() + '-' +
+      (now.getMonth() + 1 < 10 ? '0' : '') + (now.getMonth() + 1) + '-' +
+      (now.getDate() < 10 ? '0' : '') + now.getDate();
+    text('契税按不含增值税成交价计算，贷款金额按万元向下取整', PAD, y, 11, 400, C.sub);
+    text(dateStr, W - PAD, y, 11, 400, C.sub, 'right');
+
+    var H = Math.ceil(y + 34);
+    var out = document.createElement('canvas');
+    out.width = W * SCALE;
+    out.height = H * SCALE;
+    out.getContext('2d').drawImage(cv, 0, 0, W * SCALE, H * SCALE, 0, 0, W * SCALE, H * SCALE);
+    return out;
+  }
+
+  // ===== 首付联动 =====
+  // 改比例 -> 首付清空，回到按比例算出的最低首付
+  el.downRatio.addEventListener('input', function () {
+    el.downPayment.value = '';
+    recalc(false);
+  });
+  // 输入过程中只重算结果，不动输入框，避免打断输入
+  el.downPayment.addEventListener('input', function () { recalc(false); });
+  // 离开输入框时，把按万元取整补差后的首付写回输入框
+  el.downPayment.addEventListener('blur', function () { recalc(true); });
+
+  // 面积/单价变化时总价变了，已填的首付要跟着重新取整
+  ['area','price'].forEach(function (k) {
+    el[k].addEventListener('input', function () { recalc(true); });
+  });
+  ['building','unit','room'].forEach(function (k) {
+    el[k].addEventListener('input', function () { recalc(false); });
+  });
+  ['years','rateType','houses'].forEach(function (k) {
+    el[k].addEventListener('change', function () { recalc(false); });
+  });
+
+  // ===== 重置 =====
+  $('btnReset').addEventListener('click', function () {
+    ['area','price','downPayment','building','unit','room'].forEach(function (k) {
+      el[k].value = '';
+    });
+    el.downRatio.value = 15;
+    el.years.value = 30;
+    el.rateType.value = 'lpr';
+    el.houses.value = '0';
+    recalc();
+  });
+
+  // ===== 复制结果 =====
+  $('btnCopy').addEventListener('click', function () {
+    var text = [
+      '【房屋信息】',
+      '房号：' + el.rRoom.textContent,
+      '建筑面积：' + el.rArea.textContent,
+      '单价：' + el.rPrice.textContent,
+      '房屋总价：' + el.rTotal.textContent,
+      '',
+      '【首付与贷款】',
+      '首付金额：' + el.rDown.textContent + '（' + el.rDownRatio.textContent + '）',
+      '贷款金额：' + el.rLoan2.textContent,
+      '贷款年限：' + el.rYears.textContent,
+      '年利率：' + el.rRate.textContent,
+      '',
+      '【月供】',
+      '等额本息：' + el.rMEqual.textContent,
+      '等额本金：' + el.rMPrincipal.textContent,
+      '',
+      '【税费】',
+      '契税：' + el.rTax.textContent,
+      '维修基金：' + el.rFund.textContent,
+      '购房补贴：' + el.rSubsidy.textContent,
+      '',
+      '除贷款外需备现金：' + el.rCash.textContent
+    ].join('\n');
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(text).then(function () {
+        toast('已复制到剪贴板');
+      }).catch(function () { fallbackCopy(text); });
+    } else {
+      fallbackCopy(text);
+    }
+  });
+
+  function fallbackCopy(text) {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try { document.execCommand('copy'); toast('已复制到剪贴板'); }
+    catch (e) { alert('复制失败，请长按选择文本'); }
+    document.body.removeChild(ta);
+  }
+
+  function toast(msg) {
+    var d = document.createElement('div');
+    d.textContent = msg;
+    d.style.cssText = 'position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);' +
+      'background:rgba(0,0,0,.78);color:#fff;padding:12px 22px;border-radius:8px;' +
+      'font-size:14px;z-index:9999;pointer-events:none;';
+    document.body.appendChild(d);
+    setTimeout(function () { document.body.removeChild(d); }, 1600);
+  }
+
+  // ===== 生成 / 保存分享图片 =====
+  $('btnShare').addEventListener('click', function () {
+    if (!lastResult) {
+      alert('请先填写建筑面积和单价');
+      return;
+    }
+    var d = lastResult;
+    shareFileName = (d.projectName || '购房') + '-' +
+      (d.room || '测算').replace(/\s+/g, '') + '-测算.png';
+
+    var cv;
+    try {
+      cv = drawShareCard(d);
+    } catch (e) {
+      alert('图片生成失败：' + e.message);
+      return;
+    }
+    $('shareImg').src = cv.toDataURL('image/png');
+    $('shareMask').style.display = 'block';
+    document.body.style.overflow = 'hidden';
+  });
+
+  $('btnSaveShare').addEventListener('click', function () {
+    var url = $('shareImg').src;
+    if (!url) return;
+    var a = document.createElement('a');
+    a.href = url;
+    a.download = shareFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    toast('已保存，或到下载目录查看');
+  });
+
+  $('btnCloseShare').addEventListener('click', function () {
+    $('shareMask').style.display = 'none';
+    document.body.style.overflow = '';
+  });
+
+  // 首次计算
+  recalc();
+})();
+</script>
+</body>
+</html>
