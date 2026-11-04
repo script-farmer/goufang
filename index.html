@@ -316,6 +316,7 @@
     <div class="line"><span class="k">维修基金</span><span class="v" id="rFund">—</span></div>
     <div class="line"><span class="k">购房补贴</span><span class="v green" id="rSubsidy">—</span></div>
     <div class="line total"><span class="k">除贷款外需备现金</span><span class="v" id="rCash">—</span></div>
+    <div class="hint" id="cashHint" style="margin:10px 0 0;line-height:1.8;"></div>
 
     <div class="warn">
       <b>购房补贴以实际申领审核为准。</b>需年满 18 周岁、为购房合同备案的买受人，在政策有效期内完成网签备案并缴纳契税，经「一部手机游云南」小程序审核通过后打款至本人银行卡。
@@ -360,10 +361,10 @@
     LPR: 0.0350,           // 5年期以上LPR，2026-10-20 报价
     BASE_RATE: 0.0490,     // 央行基准利率 5年以上
     VAT_RATE: 0.09,        // 增值税率，用于换算不含税价
-    // 维修基金：丽江市区按建安造价5%交存（丽江市住宅专项维修资金管理办法，2018-01-01施行）
-    // 本项目为框架结构带电梯住宅：93 元/㎡
-    // 如出现不带电梯楼栋改 88；砖混 73/78；钢结构 98/103
-    FUND_RATE: 93,         // 元/㎡
+    // 维修基金：按 95 元/㎡ 计（2026-11-04 核定口径，与同事测算一致）
+    // 政策沿革：丽江市 2018 年办法为建安造价 5%，框架带电梯 1850×5% = 93 元/㎡
+    //           2026-10-27 新办法征求意见稿拟调至 6%，届时约 111 元/㎡
+    FUND_RATE: 95,         // 元/㎡
     SUBSIDY: [             // 购房补贴档位（按房屋总价）
       { max: 800000,    amount: 5000  },
       { max: 1600000,   amount: 10000 },
@@ -385,7 +386,8 @@
     rRoom: $('rRoom'), rArea: $('rArea'), rPrice: $('rPrice'), rTotal: $('rTotal'),
     rDown: $('rDown'), rDownRatio: $('rDownRatio'), rLoan2: $('rLoan2'),
     rMEqual: $('rMEqual'), rMPrincipal: $('rMPrincipal'),
-    rTax: $('rTax'), rFund: $('rFund'), rSubsidy: $('rSubsidy'), rCash: $('rCash')
+    rTax: $('rTax'), rFund: $('rFund'), rSubsidy: $('rSubsidy'), rCash: $('rCash'),
+    cashHint: $('cashHint')
   };
 
   // ===== 工具 =====
@@ -400,6 +402,12 @@
     var parts = fixed.split('.');
     parts[0] = parts[0].replace(/\B(?=(\d{3})+(?!\d))/g, ',');
     return parts.join('.');
+  }
+
+  // 面积显示：保留真实值，不做四舍五入（140.01 不能显示成 140）
+  function fmtArea(n) {
+    var s = (Math.round(n * 100) / 100).toFixed(2);
+    return s.replace(/\.?0+$/, '') || '0';
   }
 
   // 向下取整到万元
@@ -524,7 +532,7 @@
     el.rRate.textContent = actualLoan > 0 ? (annualRate * 100).toFixed(2) + '%' : '—';
 
     el.rRoom.textContent = buildRoom();
-    el.rArea.textContent = area.toFixed(2) + ' ㎡';
+    el.rArea.textContent = fmtArea(area) + ' ㎡';
     el.rPrice.textContent = fmt(price) + ' 元/㎡';
     el.rTotal.textContent = '¥' + fmt(total);
     el.rDown.textContent = '¥' + fmt(actualDown);
@@ -536,10 +544,20 @@
       : '—';
     var houseName = houseCount === '0' ? '首套' : (houseCount === '1' ? '二套' : '三套及以上');
     el.rTax.textContent = '¥' + fmt(deedTax) + '（' + houseName + ' ' +
-      area.toFixed(0) + '㎡ → ' + (taxRate * 100).toFixed(1) + '%）';
-    el.rFund.textContent = '¥' + fmt(fund);
+      fmtArea(area) + '㎡ → ' + (taxRate * 100).toFixed(1) + '%）';
+    el.rFund.textContent = '¥' + fmt(fund) + '（' + fmtArea(area) + '㎡ × ' +
+      CONFIG.FUND_RATE + ' 元/㎡）';
     el.rSubsidy.textContent = '¥' + fmt(subsidy) + '（最高）';
     el.rCash.textContent = '¥' + fmt(cashNeeded);
+
+    // 现金构成公式，逐项列出来，避免总额吓人
+    var cashHtml = '首付 ' + fmt(actualDown) + ' ＋ 契税 ' + fmt(deedTax) +
+                   ' ＋ 维修基金 ' + fmt(fund);
+    if (subsidy > 0) {
+      var netCash = cashNeeded - subsidy;
+      cashHtml += '<br>省补 ' + fmt(subsidy) + ' 审核通过后返还，抵扣后实际支出 ≈ ¥' + fmt(netCash);
+    }
+    el.cashHint.innerHTML = cashHtml;
 
     // 存一份给分享图片用
     lastResult = {
@@ -580,6 +598,7 @@
      'rLoan2','rMEqual','rMPrincipal','rTax','rFund','rSubsidy','rCash'].forEach(function (k) {
       el[k].textContent = '—';
     });
+    el.cashHint.innerHTML = '';
   }
 
   // ===== 分享图片 =====
@@ -649,7 +668,7 @@
     text(d.projectName, PAD, 44, 24, 700, C.ink);
     text('购房费用测算', W - PAD, 44, 12, 400, C.sub, 'right');
     text(d.room || '房源测算', PAD, 88, 21, 600, C.inkSoft);
-    text(d.area.toFixed(2) + ' ㎡  ·  ' + fmt(d.price) + ' 元/㎡',
+    text(fmtArea(d.area) + ' ㎡  ·  ' + fmt(d.price) + ' 元/㎡',
          PAD, 122, 13, 400, C.sub);
 
     var y = HEAD + 28;
@@ -709,16 +728,26 @@
     text('购房费用明细', PAD, y + 12, 13, 600, C.inkSoft);
     y += 34;
 
-    // 契税：需交 → 扣减省补后
-    text('契税（' + d.houseName + ' ' + (d.taxRate * 100).toFixed(1) + '%）',
+    // 契税（面积按真实值显示，不做四舍五入）
+    text('契税（' + d.houseName + ' ' + fmtArea(d.area) + '㎡ · ' +
+         (d.taxRate * 100).toFixed(1) + '%）',
          PAD, y + 18, 14, 400, C.inkSoft);
     text('¥' + fmt(d.tax), W - PAD, y + 18, 14, 600, C.ink, 'right');
     y += 38;
 
-    var afterSub = Math.max(0, d.tax - d.subsidy);
-    text('扣减省补 ¥' + fmt(d.subsidy) + ' 后', PAD + 12, y + 2, 12, 400, C.sub);
-    text('¥' + fmt(afterSub), W - PAD, y + 2, 15, 700, C.green, 'right');
-    y += 28;
+    // 省补抵扣：契税够扣时显示剩余；补贴更高时明示还能拿回多少
+    if (d.subsidy > 0) {
+      var afterSub = d.tax - d.subsidy;
+      if (afterSub >= 0) {
+        text('省补 ¥' + fmt(d.subsidy) + ' 抵扣后', PAD + 12, y + 2, 12, 400, C.sub);
+        text('¥' + fmt(afterSub), W - PAD, y + 2, 15, 700, C.green, 'right');
+      } else {
+        text('契税由省补全额覆盖，另返 ¥' + fmt(-afterSub) + ' 到账',
+             PAD + 12, y + 2, 12, 700, C.green);
+        text('契税实付 ¥0', W - PAD, y + 2, 12, 400, C.sub, 'right');
+      }
+      y += 28;
+    }
 
     c.strokeStyle = C.line;
     c.lineWidth = 1;
@@ -728,7 +757,8 @@
 
     // 维修基金
     text('维修基金', PAD, y + 18, 14, 400, C.inkSoft);
-    text('（交房时交）', PAD + textW('维修基金', 14, 400) + 4, y + 19, 11, 400, C.sub);
+    text('（' + fmtArea(d.area) + '㎡ × ' + CONFIG.FUND_RATE + ' 元/㎡，交房时交）',
+         PAD + textW('维修基金', 14, 400) + 4, y + 19, 11, 400, C.sub);
     text('¥' + fmt(d.fund), W - PAD, y + 18, 14, 600, C.ink, 'right');
     y += 38;
 
@@ -739,16 +769,22 @@
     c.moveTo(PAD, y); c.lineTo(W - PAD, y); c.stroke();
     y += 16;
 
-    // 合计按「已扣减省补」口径，保证和上面两行加得起来
+    // 合计按「已扣减省补」口径
     var netCash = d.cash - d.subsidy;
     text(d.loan > 0 ? '除贷款外需备现金' : '需备现金', PAD, y + 14, 15, 600, C.ink);
     text('¥' + fmt(netCash), W - PAD, y + 14, 21, 700, C.ink, 'right');
-    y += 38;
+    y += 32;
+
+    // 构成公式：让客户自己就能核对每一笔
+    var cashFormula = '首付 ' + fmt(d.down) + ' + 契税 ' + fmt(d.tax) +
+                      ' + 维修基金 ' + fmt(d.fund);
+    if (d.subsidy > 0) cashFormula += ' − 省补 ' + fmt(d.subsidy);
+    text(cashFormula, PAD, y + 6, 11, 400, C.sub);
+    y += 26;
 
     if (d.subsidy > 0) {
-      text('已扣减省补 ¥' + fmt(d.subsidy) + '；契税需先按全额缴纳，补贴审核通过后返还',
-           PAD, y, 11, 400, C.sub);
-      y += 24;
+      text('契税需先按全额缴纳，省补审核通过后打款到本人银行卡', PAD, y, 11, 400, C.sub);
+      y += 22;
     }
 
     // ---- 底注 ----
