@@ -261,6 +261,7 @@
       <label>利率标准</label>
       <div class="ctrl">
         <select id="rateType">
+          <option value="coop">合作银行利率（首套/二套 3.05%）</option>
           <option value="lpr">LPR（5年期以上 3.50%）</option>
           <option value="base">基准利率（5年以上 4.90%）</option>
         </select>
@@ -353,6 +354,9 @@
   // ===== 常量配置（政策变动只改这里）=====
   var CONFIG = {
     PROJECT_NAME: '御宸苑',  // 分享图片顶部显示的项目名，换盘只改这里
+    // 合作银行实际执行利率：农业银行 / 建设银行 / 富滇银行 / 农村信用社
+    // 首套、二套均为 3.05%，最长贷 30 年、贷到 75 岁（2026-11-04 银行按揭通知）
+    COOP_RATE: 0.0305,
     LPR: 0.0350,           // 5年期以上LPR，2026-10-20 报价
     BASE_RATE: 0.0490,     // 央行基准利率 5年以上
     VAT_RATE: 0.09,        // 增值税率，用于换算不含税价
@@ -407,7 +411,7 @@
   // ===== 初始化年限下拉 =====
   (function initYears() {
     var html = '';
-    for (var y = 1; y <= 40; y++) {
+    for (var y = 1; y <= 30; y++) {
       html += '<option value="' + y + '"' + (y === 30 ? ' selected' : '') + '>' + y + ' 年</option>';
     }
     el.years.innerHTML = html;
@@ -463,7 +467,10 @@
     // --- 月供 ---
     var years = parseInt(el.years.value, 10) || 30;
     var months = years * 12;
-    var annualRate = el.rateType.value === 'lpr' ? CONFIG.LPR : CONFIG.BASE_RATE;
+    var rateType = el.rateType.value;
+    var annualRate = rateType === 'coop' ? CONFIG.COOP_RATE
+                   : rateType === 'lpr' ? CONFIG.LPR
+                   : CONFIG.BASE_RATE;
     var i = annualRate / 12;
 
     var mEqual = 0, mPrincipalFirst = 0, mPrincipalLast = 0, decPerMonth = 0;
@@ -541,7 +548,9 @@
       area: area, price: price, total: total,
       downRatio: actualRatio, down: actualDown, loan: actualLoan,
       years: years, annualRate: annualRate,
-      rateLabel: el.rateType.value === 'lpr' ? 'LPR' : '基准利率',
+      rateLabel: rateType === 'coop' ? '合作银行利率'
+               : rateType === 'lpr' ? 'LPR'
+               : '基准利率',
       mEqual: mEqual, mPFirst: mPrincipalFirst, mPLast: mPrincipalLast, dec: decPerMonth,
       tax: deedTax, taxRate: taxRate, houseName: houseName,
       fund: fund, subsidy: subsidy, cash: cashNeeded
@@ -790,7 +799,7 @@
     });
     el.downRatio.value = 15;
     el.years.value = 30;
-    el.rateType.value = 'lpr';
+    el.rateType.value = 'coop';
     el.houses.value = '0';
     recalc();
   });
