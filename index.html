@@ -555,7 +555,11 @@
                    ' ＋ 维修基金 ' + fmt(fund);
     if (subsidy > 0) {
       var netCash = cashNeeded - subsidy;
-      cashHtml += '<br>省补 ' + fmt(subsidy) + ' 审核通过后返还，抵扣后实际支出 ≈ ¥' + fmt(netCash);
+      cashHtml += '<br>购房补贴 ' + fmt(subsidy) + ' 审核通过后返还，抵扣后实际支出 ≈ ¥' + fmt(netCash);
+      if (subsidy > deedTax) {
+        cashHtml += '<br><span style="color:#1e7e34;font-weight:600;">契税已由补贴全额覆盖，净赚 ' +
+                    fmt(subsidy - deedTax) + ' 元</span>';
+      }
     }
     el.cashHint.innerHTML = cashHtml;
 
@@ -735,16 +739,16 @@
     text('¥' + fmt(d.tax), W - PAD, y + 18, 14, 600, C.ink, 'right');
     y += 38;
 
-    // 省补抵扣：契税够扣时显示剩余；补贴更高时明示还能拿回多少
+    // 省补抵扣：契税够扣时显示剩余；补贴更高时把「补贴、契税、净赚」三个数全摆出来
     if (d.subsidy > 0) {
       var afterSub = d.tax - d.subsidy;
       if (afterSub >= 0) {
-        text('省补 ¥' + fmt(d.subsidy) + ' 抵扣后', PAD + 12, y + 2, 12, 400, C.sub);
+        text('购房补贴 ¥' + fmt(d.subsidy) + ' 抵扣后', PAD + 12, y + 2, 12, 400, C.sub);
         text('¥' + fmt(afterSub), W - PAD, y + 2, 15, 700, C.green, 'right');
       } else {
-        text('契税由省补全额覆盖，另返 ¥' + fmt(-afterSub) + ' 到账',
-             PAD + 12, y + 2, 12, 700, C.green);
-        text('契税实付 ¥0', W - PAD, y + 2, 12, 400, C.sub, 'right');
+        text('购房补贴 ¥' + fmt(d.subsidy) + ' − 契税 ¥' + fmt(d.tax),
+             PAD + 12, y + 2, 12, 400, C.sub);
+        text('净赚 ¥' + fmt(-afterSub), W - PAD, y + 2, 16, 700, C.green, 'right');
       }
       y += 28;
     }
@@ -778,7 +782,7 @@
     // 构成公式：让客户自己就能核对每一笔
     var cashFormula = '首付 ' + fmt(d.down) + ' + 契税 ' + fmt(d.tax) +
                       ' + 维修基金 ' + fmt(d.fund);
-    if (d.subsidy > 0) cashFormula += ' − 省补 ' + fmt(d.subsidy);
+    if (d.subsidy > 0) cashFormula += ' − 补贴 ' + fmt(d.subsidy);
     text(cashFormula, PAD, y + 6, 11, 400, C.sub);
     y += 26;
 
